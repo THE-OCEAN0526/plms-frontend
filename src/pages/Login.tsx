@@ -69,14 +69,26 @@ export default function Login() {
 
     try {
       // 發送請求
-      const response = await axios.post('http://192.168.10.1/api/auth/login.php', formData);
+      const response = await axios.post('http://192.168.10.1/api/auth/login', formData);
       
       // 這裡假設後端回傳結構是 { data: { token: string, name: string } }
       // 使用 any 暫時繞過強型別檢查，以免後端回傳結構微調時報錯
-      const { token, name } = response.data.data;
+      const { token, name, theme } = response.data.data;
       
       localStorage.setItem('plms_token', token);
       localStorage.setItem('plms_user_name', name);
+      if (theme) {
+        localStorage.setItem('plms_theme', theme);
+        // 注意：這裡存入 LocalStorage 後，因為 React App 已經渲染，
+        // ThemeContext 不會自動變更（除非重新整理）。
+        // 為了完美體驗，通常建議登入後做一次 window.location.reload() 或 redirect
+        // 不過因為您的邏輯是 navigate('/dashboard')，這會觸發 Dashboard 重新渲染，
+        // 但最外層的 Context 可能不會變。
+        
+        // 簡單解法：這裡強制重整一次頁面跳轉
+        window.location.href = '/dashboard'; 
+        return; // 中斷後續 navigate
+      }
 
       showNotification(`登入成功！歡迎回來，${name}`, 'success');
       
