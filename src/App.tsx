@@ -9,6 +9,7 @@ import Inventory from './pages/Inventory';
 import Dashboard from './pages/Dashboard';
 import MainLayout from './components/MainLayout';
 import AssetCreate from './pages/AssetCreate';
+import Maintenance from './pages/Maintenance';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('plms_token');
@@ -34,6 +35,10 @@ function App() {
 
           <Route path="/inventory" element={
             <ProtectedRoute><Inventory /></ProtectedRoute>
+          } />
+
+          <Route path="/maintenance" element={
+            <ProtectedRoute><Maintenance /></ProtectedRoute>
           } />
           
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

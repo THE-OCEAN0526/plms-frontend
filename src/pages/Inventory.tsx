@@ -331,7 +331,17 @@ export default function Inventory() {
         anchor="right"
         open={drawerOpen}
         onClose={handleCloseDrawer}
-        PaperProps={{ sx: { width: { xs: '100%', sm: 450 }, p: 0 } }}
+        slotProps={{ 
+            paper: {
+                sx: { 
+                    width: { xs: '100%', sm: 450 }, 
+                    p: 0,
+                    // 抽屜背景色改為預設背景 (深色時為深灰)
+                    bgcolor: 'background.paper',
+                    backgroundImage: 'none' // 移除 MUI 預設的 elevation 疊加層
+                } 
+            }
+        }}
       >
         {historyLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -341,7 +351,7 @@ export default function Inventory() {
           <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             
             {/* 抽屜標題 */}
-            <Box sx={{ p: 3, bgcolor: '#f8f9fa', borderBottom: '1px solid #eee' }}>
+            <Box sx={{ p: 3, bgcolor: 'background.default', borderBottom: 1, borderColor: 'divider' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                 <Chip label={historyData.asset_info.status} color={getStatusColor(historyData.asset_info.status)} size="small" />
                 <IconButton onClick={handleCloseDrawer} size="small"><CloseIcon /></IconButton>
@@ -367,7 +377,7 @@ export default function Inventory() {
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 20 }}>
                       <Box sx={{ 
                         width: 10, height: 10, borderRadius: '50%', 
-                        bgcolor: index === historyData.timeline.length - 1 ? '#1976d2' : '#bdbdbd',
+                        bgcolor: index === historyData.timeline.length - 1 ? 'primary.main' : 'text.disabled',
                         zIndex: 1
                       }} />
                       {index !== historyData.timeline.length - 1 && (
@@ -384,7 +394,7 @@ export default function Inventory() {
                         {log.action_type} 
                         {log.operator && <Typography component="span" variant="caption" color="text.secondary"> ({log.operator})</Typography>}
                       </Typography>
-                      <Paper variant="outlined" sx={{ p: 1.5, mt: 1, bgcolor: '#fafafa', borderRadius: 2 }}>
+                      <Paper variant="outlined" sx={{ p: 1.5, mt: 1, bgcolor: 'action.hover', borderRadius: 2 }}>
                         <Typography variant="body2" color="text.primary">
                           {log.description || '無備註'}
                         </Typography>

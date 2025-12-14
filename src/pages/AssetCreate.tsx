@@ -15,12 +15,11 @@ import {
   Alert,
   Stack,
   CircularProgress,
-  useTheme,
   Divider,
   FormControl,
   InputLabel,
   Select,
-  SelectChangeEvent
+  SelectChangeEvent,
 } from '@mui/material';
 
 // Icons
@@ -29,6 +28,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import CategoryIcon from '@mui/icons-material/Category';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import InfoIcon from '@mui/icons-material/Info';
 
 // 選項常數
 const UNITS = ['台', '部', '個', '支', '條', '張', '本', '卷', '包', '箱', '桶', '組', '套', '架', '件', '輛', '批', '式', '座', '塊', '盞', '扇', '門'];
@@ -71,7 +71,6 @@ const INITIAL_FORM = {
 
 export default function AssetCreate() {
   const navigate = useNavigate();
-  const theme = useTheme();
   
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -79,22 +78,15 @@ export default function AssetCreate() {
   const [error, setError] = useState<string | null>(null);
   const [calculated, setCalculated] = useState({ qty: 0, total: 0 });
 
-  // 1. 載入地點資料 (模擬 API)
+  // 1. 載入地點資料
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        // ★ 之後換成真實 API:
-        // const response = await axios.get('http://192.168.10.1/api/locations');
-        // setLocations(response.data);
-
-        // 模擬數據
-        const mockLocations = [
-          { id: 1, code: 'STORE', name: '總務處倉庫' },
-          { id: 2, code: 'I305', name: '多媒體教室 I305' },
-          { id: 3, code: 'LAB1', name: '電腦教室一' },
-        ];
-        setLocations(mockLocations);
-
+        const token = localStorage.getItem('plms_token');
+        const response = await axios.get('http://192.168.10.1/api/locations', { headers: { Authorization: `Bearer ${token}` } });
+        // 確保取到陣列
+        const locationList = Array.isArray(response.data) ? response.data : response.data.data;
+        setLocations(locationList || []);
       } catch (err) {
         console.error('無法讀取地點列表', err);
       }
@@ -149,7 +141,7 @@ export default function AssetCreate() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      alert(`🎉 成功入庫 ${calculated.qty} 筆資產！`);
+      alert(`成功入庫 ${calculated.qty} 筆資產！`);
       navigate('/inventory');
 
     } catch (err: any) {
@@ -167,11 +159,28 @@ export default function AssetCreate() {
     }
   };
 
+  // 輔助函式：取得地點名稱
+  const getLocationName = (id: string | number) => {
+    const loc = locations.find(l => l.id === Number(id));
+    return loc ? `${loc.code} - ${loc.name}` : '(未選擇)';
+  };
+
+  // 標題組件
   const SectionTitle = ({ icon, text }: { icon: any, text: string }) => (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, color: 'primary.main', opacity: 0.9 }}>
       {icon}
       <Typography variant="subtitle1" fontWeight="bold">{text}</Typography>
       <Divider sx={{ flexGrow: 1, ml: 1, opacity: 0.6 }} />
+    </Box>
+  );
+
+  // 預覽列組件
+  const PreviewRow = ({ label, value }: { label: string, value: React.ReactNode }) => (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ minWidth: 70 }}>{label}</Typography>
+      <Typography variant="body2" fontWeight={500} align="right" sx={{ color: 'text.primary', wordBreak: 'break-word' }}>
+        {value || '-'}
+      </Typography>
     </Box>
   );
 
@@ -210,7 +219,7 @@ export default function AssetCreate() {
           p: 3, 
           borderRadius: 3, 
           overflowY: 'auto', 
-          bgcolor: 'background.paper', // ★ 確保使用主題色
+          bgcolor: 'background.paper', 
           border: '1px solid', borderColor: 'divider',
           boxShadow: 'none'
         }}>
@@ -274,17 +283,20 @@ export default function AssetCreate() {
                 <Grid size={{ xs: 12, md: 4 }}>
                     <TextField fullWidth required size="small" label="增加單號" name="batch_no" value={formData.batch_no} onChange={handleChange} placeholder="PO-20250101" slotProps={{ inputLabel: { shrink: true } }} />
                 </Grid>
-                <Grid size={{ xs: 12, md: 3 }}>
+                <Grid size={{ xs: 12, md: 4 }}>
                     <TextField fullWidth required size="small" type="date" label="驗收日期" name="purchase_date" value={formData.purchase_date} onChange={handleChange} slotProps={{ inputLabel: { shrink: true } }} helperText="發票/驗收日" />
                 </Grid>
-                <Grid size={{ xs: 6, md: 2 }}>
-                    <TextField fullWidth size="small" label="經費來源" name="fund_source" value={formData.fund_source} onChange={handleChange} slotProps={{ inputLabel: { shrink: true } }} />
-                </Grid>
-                <Grid size={{ xs: 6, md: 3 }}>
+                <Grid size={{ xs: 12, md: 4 }}>
                     <TextField fullWidth required size="small" type="number" label="單價" name="unit_price" value={formData.unit_price} onChange={handleChange} slotProps={{ inputLabel: { shrink: true }, input: { startAdornment: <InputAdornment position="start">$</InputAdornment> } }} />
                 </Grid>
+
+                <Grid size={{ xs: 12, md: 8 }}>
+                    <TextField fullWidth size="small" label="經費來源" name="fund_source" value={formData.fund_source} onChange={handleChange} slotProps={{ inputLabel: { shrink: true } }} placeholder="例：高教深耕計畫 (資本門)" />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                    <TextField fullWidth size="small" type="number" label="會計科目" name="accounting_items" value={formData.accounting_items} onChange={handleChange} slotProps={{ inputLabel: { shrink: true } }} />
+                </Grid>
                 
-                {/* 保管位置 */}
                 <Grid size={{ xs: 12, md: 12 }}>
                     <FormControl fullWidth required size="small">
                       <InputLabel id="location-label" shrink>預設保管位置</InputLabel>
@@ -317,74 +329,101 @@ export default function AssetCreate() {
           </form>
         </Paper>
 
-        {/* === 右側：摘要與操作區 === */}
+        {/* === 右側：完整預覽區 === */}
         <Paper sx={{ 
           width: { xs: '100%', md: 360 }, 
-          p: 3, 
+          p: 0, // 移除 padding 讓內容貼邊
           borderRadius: 3, 
           display: 'flex', 
           flexDirection: 'column',
-          bgcolor: 'background.default', // ★ 使用主題背景色
+          bgcolor: 'background.default', 
           border: '1px solid', borderColor: 'divider',
-          boxShadow: 'none'
+          boxShadow: 'none',
+          overflow: 'hidden' // 防止內部內容溢出圓角
         }}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom color="text.secondary">
-                入庫預覽
-            </Typography>
+            {/* 標題區 */}
+            <Box sx={{ p: 2, bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
+                <Typography variant="h6" fontWeight="bold" color="text.primary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <InfoIcon fontSize="small" color="primary"/> 入庫預覽
+                </Typography>
+            </Box>
             
-            <Box sx={{ flexGrow: 1 }}>
+            {/* 可捲動的詳情內容 */}
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 3 }}>
                 {error && (
                     <Alert severity="error" sx={{ mb: 2, fontSize: '0.875rem' }}>{error}</Alert>
                 )}
 
-                {/* ★ 修正這行的寫法：bgcolor: 'background.paper' */}
-                <Stack spacing={2} sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography color="text.secondary">入庫數量</Typography>
-                        <Typography fontWeight="bold" fontSize="1.1rem" color="text.primary">{calculated.qty} {formData.unit}</Typography>
+                {/* 1. 核心摘要 (總量與金額) */}
+                <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'action.hover', borderColor: 'primary.main', borderWidth: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary">總數量</Typography>
+                        <Typography fontWeight="bold" color="primary.main">{calculated.qty} {formData.unit}</Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography color="text.secondary">編號範圍</Typography>
-                        <Typography fontWeight="bold" fontFamily="monospace" color="text.primary">
-                            {formData.suf_start || '---'} ~ {formData.suf_end || '---'}
-                        </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Typography color="text.secondary">使用年限</Typography>
-                        <Typography fontWeight="bold" color="text.primary">{formData.life_years} 年</Typography>
-                    </Box>
-                    <Divider sx={{ borderStyle: 'dashed' }} />
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="h6" fontWeight="bold" color="primary">總金額</Typography>
-                        <Typography variant="h4" fontWeight="800" color="primary">
+                        <Typography variant="subtitle1" fontWeight="bold" color="text.primary">總金額</Typography>
+                        <Typography variant="h5" fontWeight="800" color="primary.main">
                             ${calculated.total.toLocaleString()}
                         </Typography>
+                    </Box>
+                </Paper>
+
+                {/* 2. 詳細欄位清單 */}
+                <Stack spacing={2.5}>
+                    <Box>
+                        <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: 'block', mb: 1, letterSpacing: 1 }}>識別資訊</Typography>
+                        <PreviewRow label="品名" value={formData.asset_name} />
+                        <PreviewRow label="編號範圍" value={`${formData.pre_property_no} ${formData.suf_start}~${formData.suf_end}`} />
+                        <PreviewRow label="類別" value={formData.category} />
+                    </Box>
+                    
+                    <Divider />
+
+                    <Box>
+                        <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: 'block', mb: 1, letterSpacing: 1 }}>規格詳情</Typography>
+                        <PreviewRow label="廠牌/型號" value={`${formData.brand} / ${formData.model}`} />
+                        <PreviewRow label="規格" value={formData.spec} />
+                    </Box>
+
+                    <Divider />
+
+                    <Box>
+                        <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: 'block', mb: 1, letterSpacing: 1 }}>採購與管理</Typography>
+                        <PreviewRow label="增加單號" value={formData.batch_no} />
+                        <PreviewRow label="經費來源" value={formData.fund_source} />
+                        <PreviewRow label="會計科目" value={formData.accounting_items} />
+                        <PreviewRow label="驗收/建檔" value={`${formData.purchase_date} / ${formData.add_date}`} />
+                        <PreviewRow label="使用年限" value={`${formData.life_years} 年`} />
+                        <PreviewRow label="保管位置" value={getLocationName(formData.location)} />
                     </Box>
                 </Stack>
             </Box>
 
-            <Stack spacing={2} sx={{ mt: 4 }}>
-                <Button 
-                    type="submit" 
-                    form="create-form" 
-                    variant="contained" 
-                    size="large" 
-                    disabled={loading || calculated.qty <= 0}
-                    startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                    sx={{ py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', borderRadius: 2, boxShadow: 'none' }}
-                >
-                    {loading ? '處理中...' : '確認入庫'}
-                </Button>
-                
-                <Button 
-                    variant="text" 
-                    color="error" 
-                    startIcon={<DeleteIcon />} 
-                    onClick={handleReset}
-                >
-                    清空欄位
-                </Button>
-            </Stack>
+            {/* 底部操作按鈕 (固定) */}
+            <Box sx={{ p: 2, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }}>
+                <Stack spacing={2}>
+                    <Button 
+                        type="submit" 
+                        form="create-form" 
+                        variant="contained" 
+                        size="large" 
+                        disabled={loading || calculated.qty <= 0}
+                        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                        sx={{ py: 1.5, fontSize: '1.1rem', fontWeight: 'bold', borderRadius: 2, boxShadow: 'none' }}
+                    >
+                        {loading ? '處理中...' : '確認入庫'}
+                    </Button>
+                    
+                    <Button 
+                        variant="text" 
+                        color="error" 
+                        startIcon={<DeleteIcon />} 
+                        onClick={handleReset}
+                    >
+                        清空欄位
+                    </Button>
+                </Stack>
+            </Box>
         </Paper>
 
       </Box>
