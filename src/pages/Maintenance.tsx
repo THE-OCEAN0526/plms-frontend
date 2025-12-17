@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import axios from "axios";
 import {
   Box,
@@ -52,47 +52,19 @@ interface AssetSearchResult {
   status: string;
 }
 
-// 維修工單 (前端顯示用)
+// 維修工單 (前端顯示用，對應 GET /api/maintenances 回傳)
 interface MaintenanceItem {
   id: number;
   asset_id: number;
   pre_property_no: string;
   sub_no: string;
   asset_name: string;
-  issue: string;
+  issue: string; // 對應後端的 issue_description
   vendor: string;
-  start_date: string;
+  start_date: string; // 對應後端的 send_date
   action_type: "維修" | "保養";
   reporter: string;
 }
-
-// 模擬資料：進行中的維修單 (列表用)
-const MOCK_DATA: MaintenanceItem[] = [
-  {
-    id: 1,
-    asset_id: 7,
-    pre_property_no: "3100710",
-    sub_no: "3100710-39",
-    asset_name: "ASUS 筆記型電腦",
-    issue: "螢幕無法顯示，電源燈有亮",
-    vendor: "ASUS 原廠",
-    start_date: "2025-11-19",
-    action_type: "維修",
-    reporter: "王小明",
-  },
-  {
-    id: 2,
-    asset_id: 8,
-    pre_property_no: "3100710",
-    sub_no: "3100710-42",
-    asset_name: "EPSON 投影機",
-    issue: "定期更換燈泡與除塵",
-    vendor: "捷修網",
-    start_date: "2025-11-18",
-    action_type: "保養",
-    reporter: "林大華",
-  },
-];
 
 export default function Maintenance() {
   // 頁面狀態
@@ -107,9 +79,9 @@ export default function Maintenance() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // --- Autocomplete 搜尋狀態 ---
-  const [assetOptions, setAssetOptions] = useState<AssetSearchResult[]>([]); // 下拉選單的選項
-  const [assetInputValue, setAssetInputValue] = useState(""); // 使用者輸入的關鍵字
-  const [isAssetLoading, setIsAssetLoading] = useState(false); // 搜尋中的轉圈圈
+  const [assetOptions, setAssetOptions] = useState<AssetSearchResult[]>([]);
+  const [assetInputValue, setAssetInputValue] = useState("");
+  const [isAssetLoading, setIsAssetLoading] = useState(false);
 
   // 表單：新增/修改
   const [form, setForm] = useState({
@@ -133,16 +105,45 @@ export default function Maintenance() {
   const [selectedCompleteItem, setSelectedCompleteItem] =
     useState<MaintenanceItem | null>(null);
 
-  // 1. 初始化載入列表
-  useEffect(() => {
-    setTimeout(() => {
-      setItems(MOCK_DATA);
+  // 1. 初始化載入列表 (改為呼叫 API)
+  const fetchItems = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("plms_token");
+      // 呼叫 GET /api/maintenances
+      const res = await axios.get("http://192.168.10.1/api/maintenances", {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { status: "active" }, // 只抓進行中的
+      });
+
+      const rawData = res.data.data || [];
+
+      const mappedItems: MaintenanceItem[] = rawData.map((item: any) => ({
+        id: item.id,
+        asset_id: item.item_id, // item_id -> asset_id
+        pre_property_no: item.pre_property_no,
+        sub_no: String(item.sub_no), // 轉字串保險
+        asset_name: item.asset_name,
+        issue: item.issue_description || "", // issue_description -> issue (若是 null 給空字串)
+        vendor: item.vendor,
+        start_date: item.send_date, // send_date -> start_date
+        action_type: item.action_type,
+        reporter: "System", // API 目前沒回傳 reporter，暫時寫死
+      }));
+
+      setItems(mappedItems);
+    } catch (err) {
+      console.error("無法載入維修列表", err);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   }, []);
 
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
+
   // 2. 資產搜尋邏輯 (核心功能)
-  // 使用 useMemo + debounce 來防止每打一個字就發 Request
   const fetchAssets = useMemo(
     () =>
       debounce(
@@ -150,22 +151,18 @@ export default function Maintenance() {
           input: string,
           callback: (results: AssetSearchResult[]) => void
         ) => {
-          if (!input || input.length < 2) {
-            // 至少輸入 2 個字才搜尋，避免資料量過大
+          if (!input || input.length < 1) {
             callback([]);
             return;
           }
 
           try {
             const token = localStorage.getItem("plms_token");
-            // ★ 關鍵：帶入 scope=maintainable 只搜尋「可維修」的資產 (排除已報修、報廢)
-            // 這裡假設後端 API 格式為 GET /api/assets?keyword=xxx&scope=maintainable
             const response = await axios.get("http://192.168.10.1/api/assets", {
               params: { keyword: input, scope: "maintainable", limit: 20 },
               headers: { Authorization: `Bearer ${token}` },
             });
 
-            // 處理回傳結構 (假設後端回傳 { data: [...] } 或直接 [...])
             const results = Array.isArray(response.data)
               ? response.data
               : response.data.data || [];
@@ -176,11 +173,10 @@ export default function Maintenance() {
           }
         },
         500
-      ), // 延遲 500ms
+      ),
     []
   );
 
-  // 監聽使用者輸入，觸發搜尋
   useEffect(() => {
     let active = true;
 
@@ -208,7 +204,7 @@ export default function Maintenance() {
   const handleOpenCreate = () => {
     setIsEditing(false);
     setEditingId(null);
-    setAssetInputValue(""); // 清空搜尋
+    setAssetInputValue("");
     setAssetOptions([]);
     setForm({
       asset_id: null,
@@ -226,7 +222,6 @@ export default function Maintenance() {
   const handleOpenEdit = (item: MaintenanceItem) => {
     setIsEditing(true);
     setEditingId(item.id);
-    // 編輯時，資產欄位鎖定，顯示目前的資產
     setForm({
       asset_id: item.asset_id,
       pre_property_no: item.pre_property_no,
@@ -240,54 +235,62 @@ export default function Maintenance() {
     setOpenFormDialog(true);
   };
 
-  const handleFormSubmit = () => {
+  const handleFormSubmit = async () => {
     if (!form.asset_id) {
       alert("請先選擇資產");
       return;
     }
 
-    if (isEditing && editingId) {
-      // 修改邏輯
-      const updatedItems = items.map((item) =>
-        item.id === editingId
-          ? {
-              ...item,
-              asset_id: form.asset_id as number,
-              sub_no: form.sub_no,
-              asset_name: form.asset_name,
-              action_type: form.action_type as "維修" | "保養",
-              issue: form.issue,
-              vendor: form.vendor,
-              start_date: form.start_date,
-            }
-          : item
-      );
-      setItems(updatedItems);
-      alert("維修單已更新！");
-    } else {
-      // 新增邏輯
-      const newItem: MaintenanceItem = {
-        id: Math.floor(Math.random() * 1000),
-        asset_id: form.asset_id as number,
-        pre_property_no: form.pre_property_no,
-        sub_no: form.sub_no,
-        asset_name: form.asset_name || "(未知資產)",
-        issue: form.issue,
+    try {
+      const token = localStorage.getItem("plms_token");
+      const headers = { Authorization: `Bearer ${token}` };
+
+      // 準備 payload
+      const payload = {
+        item_id: form.asset_id,
+        action_type: form.action_type,
         vendor: form.vendor,
-        start_date: form.start_date,
-        action_type: form.action_type as "維修" | "保養",
-        reporter: "Current User",
+        start_date: form.start_date, // 對應 Controller 的映射邏輯
+        issue_description: form.issue, // 對應 Controller 的映射邏輯
       };
-      setItems([newItem, ...items]);
-      alert("報修單已建立！");
+
+      if (isEditing && editingId) {
+        // 修改 (PUT)
+        await axios.put(
+          `http://192.168.10.1/api/maintenances/${editingId}`,
+          payload,
+          { headers }
+        );
+        alert("維修單已更新！");
+      } else {
+        // 新增 (POST)
+        await axios.post("http://192.168.10.1/api/maintenances", payload, {
+          headers,
+        });
+        alert("報修單已建立！");
+      }
+
+      setOpenFormDialog(false);
+      fetchItems(); // 重新整理列表
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || "操作失敗，請檢查網路或欄位");
     }
-    setOpenFormDialog(false);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (window.confirm("確定要撤銷此報修單嗎？(資產將恢復為送修前的狀態)")) {
-      setItems(items.filter((t) => t.id !== id));
-      if (openFormDialog) setOpenFormDialog(false);
+      try {
+        const token = localStorage.getItem("plms_token");
+        await axios.delete(`http://192.168.10.1/api/maintenances/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        alert("已撤銷維修單");
+        setOpenFormDialog(false);
+        fetchItems(); // 重新整理列表
+      } catch (err: any) {
+        alert(err.response?.data?.message || "刪除失敗");
+      }
     }
   };
 
@@ -296,24 +299,56 @@ export default function Maintenance() {
     setOpenCompleteDialog(true);
   };
 
-  const handleCompleteSubmit = () => {
+  const handleCompleteSubmit = async () => {
     if (!selectedCompleteItem) return;
-    const updatedItems = items.filter((t) => t.id !== selectedCompleteItem.id);
-    setItems(updatedItems);
-    setOpenCompleteDialog(false);
-    alert(`工單 #${selectedCompleteItem.id} 已結案！資產恢復為「閒置」狀態。`);
-    setCompleteForm({
-      cost: "",
-      finish_date: new Date().toISOString().split("T")[0],
-      result: "維修成功",
-      remarks: "",
-    });
+
+    try {
+      const token = localStorage.getItem("plms_token");
+
+      // 結案 Payload
+      const payload = {
+        cost: parseFloat(completeForm.cost) || 0,
+        finish_date: completeForm.finish_date,
+        result_status: completeForm.result,
+        maintain_result: completeForm.remarks,
+      };
+
+      await axios.put(
+        `http://192.168.10.1/api/maintenances/${selectedCompleteItem.id}`,
+        payload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      alert(
+        `工單 #${selectedCompleteItem.id} 已結案！資產恢復為「閒置」狀態。`
+      );
+      setOpenCompleteDialog(false);
+      setCompleteForm({
+        cost: "",
+        finish_date: new Date().toISOString().split("T")[0],
+        result: "維修成功",
+        remarks: "",
+      });
+      fetchItems(); // 重新整理列表
+    } catch (err: any) {
+      alert(err.response?.data?.message || "結案失敗");
+    }
   };
 
-  // 列表搜尋過濾
-  const filteredItems = items.filter(
-    (t) => t.sub_no.includes(keyword) || t.asset_name.includes(keyword)
-  );
+  // 列表搜尋過濾 (前端過濾，若資料量大可改為後端搜尋)
+  const filteredItems = items.filter((t) => {
+    const fullNo = `${t.pre_property_no}-${t.sub_no}`;
+
+    return (
+      fullNo.includes(keyword) ||
+      t.pre_property_no.includes(keyword) ||
+      t.sub_no.includes(keyword) ||
+      t.asset_name.includes(keyword) ||
+      t.vendor.includes(keyword)
+    );
+  });
 
   return (
     <Box
@@ -353,7 +388,7 @@ export default function Maintenance() {
         <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
           <TextField
             size="small"
-            placeholder="搜尋編號或品名..."
+            placeholder="搜尋編號、品名或廠商..."
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             InputProps={{
@@ -363,7 +398,7 @@ export default function Maintenance() {
                 </InputAdornment>
               ),
             }}
-            sx={{ bgcolor: "background.paper", borderRadius: 1 }}
+            sx={{ bgcolor: "background.paper", borderRadius: 1, minWidth: 250 }}
           />
           <Button
             variant="contained"
@@ -466,7 +501,7 @@ export default function Maintenance() {
                         color="text.secondary"
                         fontFamily="monospace"
                       >
-                        {row.sub_no}
+                        [{row.pre_property_no}-{row.sub_no}]
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -573,7 +608,7 @@ export default function Maintenance() {
               getOptionLabel={(option) =>
                 `[${option.pre_property_no}-${option.sub_no}] ${option.asset_name}`
               }
-              // 判斷是否為同一物件 (避免 React 警告)
+              // 判斷是否為同一物件
               isOptionEqualToValue={(option, value) => option.id === value.id}
               // 當選中時，更新 form
               onChange={(_, newValue) => {
@@ -582,13 +617,14 @@ export default function Maintenance() {
                     ...form,
                     asset_id: newValue.id,
                     pre_property_no: newValue.pre_property_no,
-                    sub_no: String(newValue.sub_no), // 轉字串，避免 API 回傳數字導致錯誤
+                    sub_no: String(newValue.sub_no),
                     asset_name: newValue.asset_name,
                   });
                 } else {
                   setForm({
                     ...form,
                     asset_id: null,
+                    pre_property_no: "",
                     sub_no: "",
                     asset_name: "",
                   });
@@ -619,11 +655,10 @@ export default function Maintenance() {
                   <li key={key} {...otherProps}>
                     <Box>
                       <Typography variant="body2" fontWeight="bold">
-                        {/* 顯示編號與品名 */}[{option.pre_property_no} -{" "}
-                        {option.sub_no}] {option.asset_name}
+                        [{option.pre_property_no}-{option.sub_no}]{" "}
+                        {option.asset_name}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {/* 顯示廠牌、型號與狀態 (這裡就會顯示 Dell 了) */}
                         {option.brand} {option.model} ({option.status})
                       </Typography>
                     </Box>
@@ -742,7 +777,7 @@ export default function Maintenance() {
         </DialogActions>
       </Dialog>
 
-      {/* --- Dialog: 完修結案 (保持原樣) --- */}
+      {/* --- Dialog: 完修結案 --- */}
       <Dialog
         open={openCompleteDialog}
         onClose={() => setOpenCompleteDialog(false)}
@@ -782,7 +817,8 @@ export default function Maintenance() {
                 color="text.secondary"
                 fontFamily="monospace"
               >
-                {selectedCompleteItem?.sub_no}
+                [{selectedCompleteItem?.pre_property_no}-
+                {selectedCompleteItem?.sub_no}]
               </Typography>
             </Box>
 
