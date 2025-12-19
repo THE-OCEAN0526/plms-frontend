@@ -28,6 +28,7 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import TableViewIcon from "@mui/icons-material/TableView";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import BuildIcon from "@mui/icons-material/Build";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -43,7 +44,6 @@ const MENU_ITEMS = [
   { text: "資產總表", icon: <TableViewIcon />, path: "/inventory" },
   { text: "報表盤點", icon: <AssessmentIcon />, path: "/report" },
   { text: "維護登記", icon: <BuildIcon />, path: "/maintenance" },
-  { text: "系統管理", icon: <SettingsIcon />, path: "/admin" },
 ];
 
 interface MainLayoutProps {

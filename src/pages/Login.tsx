@@ -69,7 +69,7 @@ export default function Login() {
 
     try {
       // 發送請求
-      const response = await axios.post('http://192.168.10.1/api/auth/login', formData);
+      const response = await axios.post('http://192.168.10.1/api/tokens', formData);
       
       // 這裡假設後端回傳結構是 { data: { token: string, name: string } }
       // 使用 any 暫時繞過強型別檢查，以免後端回傳結構微調時報錯

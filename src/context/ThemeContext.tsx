@@ -35,7 +35,7 @@ export const ThemeContextProvider = ({ children }: { children: React.ReactNode }
       if (token) {
         // 請確保後端有對應的 API (PUT /api/user/theme)
         // 這裡僅發送請求，不等待回應，因為 UI 回饋優先
-        await axios.put('http://192.168.10.1/api/user/theme', 
+        await axios.put('http://192.168.10.1/api/users/theme', 
           { theme: newMode },
           { headers: { Authorization: `Bearer ${token}` } }
         );

@@ -241,6 +241,12 @@ export default function Maintenance() {
       return;
     }
 
+    // ★ 修改處 1：新增廠商必填驗證
+    if (!form.vendor || form.vendor.trim() === "") {
+      alert("請填寫維修廠商或負責人");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("plms_token");
       const headers = { Authorization: `Bearer ${token}` };
@@ -322,7 +328,7 @@ export default function Maintenance() {
       );
 
       alert(
-        `工單 #${selectedCompleteItem.id} 已結案！資產恢復為「閒置」狀態。`
+        `工單 #${selectedCompleteItem.id} 已結案！`
       );
       setOpenCompleteDialog(false);
       setCompleteForm({
@@ -337,7 +343,7 @@ export default function Maintenance() {
     }
   };
 
-  // 列表搜尋過濾 (前端過濾，若資料量大可改為後端搜尋)
+  // 列表搜尋過濾 (前端過濾)
   const filteredItems = items.filter((t) => {
     const fullNo = `${t.pre_property_no}-${t.sub_no}`;
 
@@ -602,7 +608,7 @@ export default function Maintenance() {
               // 資料來源
               options={assetOptions}
               loading={isAssetLoading}
-              // ★ 關鍵修正 1：關閉前端過濾，信任後端回傳的結果
+              // 關閉前端過濾，信任後端回傳的結果
               filterOptions={(x) => x}
               // 如何顯示選項文字 (給人看的)
               getOptionLabel={(option) =>
@@ -822,8 +828,17 @@ export default function Maintenance() {
               </Typography>
             </Box>
 
-            <Alert severity="success">
-              結案後，資產狀態將恢復為<b>「使用中 / 閒置」</b>。
+            {/* ★ 修改處 2：更新結案狀態說明 */}
+            <Alert severity="info" sx={{ mb: 2 }}>
+              結案後資產狀態變更：
+              <ul style={{ margin: "4px 0 0 0", paddingLeft: "20px" }}>
+                <li>
+                  <b>維修成功</b>：資產恢復為「閒置」，狀況為「好」。
+                </li>
+                <li>
+                  <b>無法修復</b>：資產將直接轉為「報廢」，狀況為「壞」。
+                </li>
+              </ul>
             </Alert>
 
             <Grid container spacing={2}>

@@ -84,7 +84,7 @@ export default function Dashboard() {
         if (!token) { navigate('/'); return; }
 
         const response = await axios.get<DashboardData>(
-          'http://192.168.10.1/api/dashboard/summary', 
+          'http://192.168.10.1/api/dashboard', 
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setData(response.data);
