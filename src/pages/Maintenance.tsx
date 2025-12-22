@@ -507,7 +507,7 @@ export default function Maintenance() {
                         color="text.secondary"
                         fontFamily="monospace"
                       >
-                        [{row.pre_property_no}-{row.sub_no}]
+                        [{row.pre_property_no}- {row.sub_no}]
                       </Typography>
                     </TableCell>
                     <TableCell>

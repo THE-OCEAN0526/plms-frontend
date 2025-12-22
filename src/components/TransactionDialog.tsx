@@ -34,7 +34,7 @@ interface User {
 }
 
 const ACTION_TYPES = [
-  { label: '領用', value: 'use' },     
+  { label: '使用', value: 'use' },     
   { label: '借用', value: 'loan' },    
   { label: '歸還', value: 'return' },  
   { label: '移轉', value: 'transfer' },
@@ -117,7 +117,7 @@ export default function TransactionDialog({ open, onClose, selectedAssets, onSuc
     const itemIds = selectedAssets.map(a => a.id);
 
     // Check 2: 必填欄位的前端防呆
-    // 移轉 & 校正 & 領用 & 歸還 -> 必須有位置
+    // 移轉 & 校正 & 使用 & 歸還 -> 必須有位置
     if (['use', 'return', 'transfer', 'correct'].includes(form.action_type) && !form.location_id) {
         alert("請選擇地點 (Location)");
         return;
