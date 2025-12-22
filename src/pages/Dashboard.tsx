@@ -80,7 +80,7 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const userName = localStorage.getItem("plms_user_name") || "User";
+  const userName = localStorage.getItem("pms_user_name") || "User";
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
 
   // 格式化貨幣函式
@@ -95,7 +95,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const token = localStorage.getItem("plms_token");
+        const token = localStorage.getItem("pms_token");
         if (!token) {
           navigate("/");
           return;

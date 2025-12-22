@@ -82,7 +82,7 @@ export default function AssetHistoryDrawer({
   const fetchHistory = async (id: number) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("plms_token");
+      const token = localStorage.getItem("pms_token");
       const response = await axios.get<AssetHistory>(
         `http://192.168.10.1/api/assets/${id}/history`,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -156,7 +156,7 @@ export default function AssetHistoryDrawer({
                   sx={{ fontWeight: "bold" }}
                 />
               </Stack>
-              
+
               <IconButton onClick={onClose} size="small">
                 <CloseIcon />
               </IconButton>

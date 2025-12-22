@@ -108,7 +108,7 @@ export default function Inventory() {
     // setSelectedIds([]);
 
     try {
-      const token = localStorage.getItem("plms_token");
+      const token = localStorage.getItem("pms_token");
       if (!token) return;
 
       const params = new URLSearchParams();

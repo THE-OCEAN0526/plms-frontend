@@ -12,7 +12,7 @@ import AssetCreate from './pages/AssetCreate';
 import Maintenance from './pages/Maintenance';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = localStorage.getItem('plms_token');
+  const token = localStorage.getItem('pms_token');
   if (!token) return <Navigate to="/" replace />;
   return <MainLayout>{children}</MainLayout>;
 };

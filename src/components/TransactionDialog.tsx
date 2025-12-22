@@ -72,7 +72,7 @@ export default function TransactionDialog({ open, onClose, selectedAssets, onSuc
     if (open) {
       const fetchData = async () => {
         try {
-          const token = localStorage.getItem("plms_token");
+          const token = localStorage.getItem("pms_token");
           const headers = { Authorization: `Bearer ${token}` };
           
           const [locRes, userRes] = await Promise.all([
@@ -111,7 +111,7 @@ export default function TransactionDialog({ open, onClose, selectedAssets, onSuc
 
   // 2. 送出前的檢查與 Payload 建構
   const handleSubmit = async () => {
-    const token = localStorage.getItem("plms_token");
+    const token = localStorage.getItem("pms_token");
     
     // Check 1: item_ids 必須為陣列 (map 回傳即為陣列，確認無誤)
     const itemIds = selectedAssets.map(a => a.id);

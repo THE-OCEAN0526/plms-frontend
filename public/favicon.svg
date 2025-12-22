@@ -1,0 +1,31 @@
+<svg 
+  width="512" 
+  height="512" 
+  viewBox="0 0 100 100" 
+  fill="none" 
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <defs>
+    <linearGradient id="pmsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#4338CA" />
+      <stop offset="100%" stopColor="#A855F7" />
+    </linearGradient>
+  </defs>
+  
+  <path 
+    d="M50 10L15 30V70L50 90L85 70V30L50 10Z" 
+    fill="url(#pmsGradient)" 
+    fill-opacity="0.9"
+  />
+  
+  <path 
+    d="M40 35H58C63 35 67 39 67 44C67 49 63 53 58 53H40V65" 
+    stroke="white" 
+    stroke-width="6" 
+    stroke-linecap="round" 
+    stroke-linejoin="round"
+  />
+  
+  <circle cx="75" cy="25" r="7" fill="#F59E0B" />
+  <circle cx="75" cy="25" r="11" stroke="#F59E0B" stroke-opacity="0.3" stroke-width="2" />
+</svg>

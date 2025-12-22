@@ -36,7 +36,6 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import HandymanIcon from "@mui/icons-material/Handyman";
 import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 
 // --- 型別定義 ---
@@ -109,7 +108,7 @@ export default function Maintenance() {
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("plms_token");
+      const token = localStorage.getItem("pms_token");
       // 呼叫 GET /api/maintenances
       const res = await axios.get("http://192.168.10.1/api/maintenances", {
         headers: { Authorization: `Bearer ${token}` },
@@ -157,7 +156,7 @@ export default function Maintenance() {
           }
 
           try {
-            const token = localStorage.getItem("plms_token");
+            const token = localStorage.getItem("pms_token");
             const response = await axios.get("http://192.168.10.1/api/assets", {
               params: { keyword: input, scope: "maintainable", limit: 20 },
               headers: { Authorization: `Bearer ${token}` },
@@ -248,7 +247,7 @@ export default function Maintenance() {
     }
 
     try {
-      const token = localStorage.getItem("plms_token");
+      const token = localStorage.getItem("pms_token");
       const headers = { Authorization: `Bearer ${token}` };
 
       // 準備 payload
@@ -287,7 +286,7 @@ export default function Maintenance() {
   const handleDelete = async (id: number) => {
     if (window.confirm("確定要撤銷此報修單嗎？(資產將恢復為送修前的狀態)")) {
       try {
-        const token = localStorage.getItem("plms_token");
+        const token = localStorage.getItem("pms_token");
         await axios.delete(`http://192.168.10.1/api/maintenances/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -309,7 +308,7 @@ export default function Maintenance() {
     if (!selectedCompleteItem) return;
 
     try {
-      const token = localStorage.getItem("plms_token");
+      const token = localStorage.getItem("pms_token");
 
       // 結案 Payload
       const payload = {
@@ -384,7 +383,7 @@ export default function Maintenance() {
             color="text.primary"
             sx={{ display: "flex", alignItems: "center", gap: 1 }}
           >
-            <HandymanIcon color="warning" /> 維修登記
+            維修登記
           </Typography>
           <Typography variant="body2" color="text.secondary">
             目前共有 <b>{items.length}</b> 項資產正在進行維修或保養

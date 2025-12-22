@@ -17,10 +17,11 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  Switch, 
-  FormControlLabel
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import { useColorMode } from "../context/ThemeContext";
+import { PMSLogo } from "./Logo";
 
 // MUI 圖標
 import MenuIcon from "@mui/icons-material/Menu";
@@ -28,7 +29,6 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import TableViewIcon from "@mui/icons-material/TableView";
-import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import BuildIcon from "@mui/icons-material/Build";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -56,7 +56,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [open, setOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const userName = localStorage.getItem("plms_user_name");
+  const userName = localStorage.getItem("pms_user_name");
   const { mode, toggleColorMode } = useColorMode();
 
   // 這裡移除了 token 檢查，讓 ProtectedRoute 專職負責權限
@@ -89,7 +89,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         open={open}
         sx={{
           width: open ? drawerWidth : 65,
-          transition: 'width 0.2s',
+          transition: "width 0.2s",
           flexShrink: 0,
           whiteSpace: "nowrap",
           boxSizing: "border-box",
@@ -100,7 +100,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             backgroundColor: "#fff",
             borderRight: "1px solid",
             borderColor: "divider",
-            bgcolor: 'background.paper',
+            bgcolor: "background.paper",
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
@@ -118,25 +118,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
             }}
           >
             {open && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box
-                  sx={{
-                    bgcolor: "#1976d2",
-                    color: "white",
-                    p: 0.5,
-                    borderRadius: 1,
-                    fontWeight: "bold",
-                  }}
-                >
-                  Logo
-                </Box>
-                <Typography
-                  variant="h6"
-                  noWrap
-                  component="div"
-                  sx={{ fontWeight: "bold", color: "#333" }}
-                >
-                  PLMS
+              <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 2 }}>
+                <PMSLogo size={32} />
+                <Typography variant="h6" fontWeight="bold" color="primary">
+                  PMS
                 </Typography>
               </Box>
             )}
@@ -159,10 +144,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     minHeight: 48,
                     justifyContent: open ? "initial" : "center",
                     px: 2.5,
-                    bgcolor: location.pathname === item.path ? (theme) => alpha(theme.palette.primary.main, 0.1) : 'transparent',
-                    borderRight: location.pathname === item.path ? '4px solid' : 'none',
-                    borderColor: 'primary.main',
-                    '&:hover': { bgcolor: 'action.hover' },
+                    bgcolor:
+                      location.pathname === item.path
+                        ? (theme) => alpha(theme.palette.primary.main, 0.1)
+                        : "transparent",
+                    borderRight:
+                      location.pathname === item.path ? "4px solid" : "none",
+                    borderColor: "primary.main",
+                    "&:hover": { bgcolor: "action.hover" },
                   }}
                   onClick={() => navigate(item.path)}
                 >
@@ -179,7 +168,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   </ListItemIcon>
                   <ListItemText
                     primary={item.text}
-                    sx={{ opacity: open ? 1 : 0, color: 'text.primary' }}
+                    sx={{ opacity: open ? 1 : 0, color: "text.primary" }}
                   />
                 </ListItemButton>
               </ListItem>
@@ -266,9 +255,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
           flexGrow: 1,
           height: "100vh",
           overflow: "auto",
-          backgroundColor: 'background.default',
+          backgroundColor: "background.default",
           p: 3,
-          color: 'text.primary'
+          color: "text.primary",
         }}
       >
         {/* 為了避開 Toolbar 可能佔用的空間，這裡其實可以不需要，因為我們沒有頂部 AppBar，但保留亦可 */}

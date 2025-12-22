@@ -82,7 +82,7 @@ export default function AssetCreate() {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const token = localStorage.getItem('plms_token');
+        const token = localStorage.getItem('pms_token');
         const response = await axios.get('http://192.168.10.1/api/locations', { headers: { Authorization: `Bearer ${token}` } });
         // 確保取到陣列
         const locationList = Array.isArray(response.data) ? response.data : response.data.data;
@@ -125,7 +125,7 @@ export default function AssetCreate() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('plms_token');
+      const token = localStorage.getItem('pms_token');
       const payload = {
         ...formData,
         suf_start_no: parseInt(formData.suf_start),
@@ -281,7 +281,7 @@ export default function AssetCreate() {
             <SectionTitle icon={<ReceiptLongIcon />} text="3. 採購與位置" />
             <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <TextField fullWidth required size="small" label="增加單號" name="batch_no" value={formData.batch_no} onChange={handleChange} placeholder="PO-20250101" slotProps={{ inputLabel: { shrink: true } }} />
+                    <TextField fullWidth size="small" label="增加單號" name="batch_no" value={formData.batch_no} onChange={handleChange} placeholder="09411016" slotProps={{ inputLabel: { shrink: true } }} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                     <TextField fullWidth required size="small" type="date" label="驗收日期" name="purchase_date" value={formData.purchase_date} onChange={handleChange} slotProps={{ inputLabel: { shrink: true } }} helperText="發票/驗收日" />
@@ -294,7 +294,7 @@ export default function AssetCreate() {
                     <TextField fullWidth size="small" label="經費來源" name="fund_source" value={formData.fund_source} onChange={handleChange} slotProps={{ inputLabel: { shrink: true } }} placeholder="例：高教深耕計畫 (資本門)" />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <TextField fullWidth size="small" type="number" label="會計科目" name="accounting_items" value={formData.accounting_items} onChange={handleChange} slotProps={{ inputLabel: { shrink: true } }} />
+                    <TextField fullWidth size="small"  label="會計項目" name="accounting_items" placeholder="134101" value={formData.accounting_items} onChange={handleChange} slotProps={{ inputLabel: { shrink: true } }} />
                 </Grid>
                 
                 <Grid size={{ xs: 12, md: 12 }}>

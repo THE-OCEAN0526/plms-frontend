@@ -66,7 +66,7 @@ export default function Transaction() {
   const fetchAssets = async (search = "") => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("plms_token");
+      const token = localStorage.getItem("pms_token");
       // 這裡假設後端有一個 API 可以列出所有資產
       const res = await axios.get("http://192.168.10.1/api/assets", {
         headers: { Authorization: `Bearer ${token}` },
@@ -126,7 +126,7 @@ export default function Transaction() {
     setProcessing(true);
     setProgress(0);
 
-    const token = localStorage.getItem("plms_token");
+    const token = localStorage.getItem("pms_token");
     const total = selectedIds.length;
     let successCount = 0;
     let failCount = 0;

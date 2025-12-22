@@ -1,231 +1,112 @@
+// src/pages/Login.tsx
 import { useState, ChangeEvent, FormEvent } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-
-// MUI 組件
 import { 
   Box, Card, CardContent, TextField, Button, Typography, Container, 
-  InputAdornment, Avatar, CssBaseline, Snackbar, Alert, AlertColor
+  InputAdornment, CssBaseline, Snackbar, Alert, AlertColor,
+  IconButton, Tab, Tabs, Fade, useTheme
 } from '@mui/material';
-
-// MUI 圖標
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import KeyIcon from '@mui/icons-material/Key';
-
-// 定義通知狀態的介面
-interface NotificationState {
-  open: boolean;
-  message: string;
-  severity: AlertColor;
-}
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import BadgeIcon from '@mui/icons-material/Badge';
+import { PMSLogo } from '../components/Logo';
 
 export default function Login() {
-  const navigate = useNavigate();
+  const theme = useTheme();
+  const [isLogin, setIsLogin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({ staff_code: '', password: '', name: '' });
+  const [notification, setNotification] = useState({ open: false, message: '', severity: 'info' as AlertColor });
 
-  // 定義表單資料
-  const [formData, setFormData] = useState({
-    staff_code: '',
-    password: ''
-  });
-  
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  const [notification, setNotification] = useState<NotificationState>({
-    open: false,
-    message: '',
-    severity: 'info'
-  });
-
-  // TS: 指定事件型別為 HTMLInputElement 的變更事件
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const showNotification = (msg: string, type: AlertColor = 'info') => {
-    setNotification({
-      open: true,
-      message: msg,
-      severity: type
-    });
-  };
-
-  const handleCloseNotification = (_event?: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') return;
-    setNotification({ ...notification, open: false });
-  };
-
-  // TS: 指定表單送出事件
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!formData.staff_code || !formData.password) {
-      showNotification('請填寫帳號與密碼欄位！', 'warning');
-      return; 
+    if (!formData.staff_code || !formData.password || (!isLogin && !formData.name)) {
+      setNotification({ open: true, message: '請完整填寫欄位', severity: 'warning' });
+      return;
     }
 
     setIsLoading(true);
+    const apiBase = 'http://192.168.10.1/api';
 
     try {
-      // 發送請求
-      const response = await axios.post('http://192.168.10.1/api/tokens', formData);
-      
-      // 這裡假設後端回傳結構是 { data: { token: string, name: string } }
-      // 使用 any 暫時繞過強型別檢查，以免後端回傳結構微調時報錯
-      const { token, name, theme } = response.data.data;
-      
-      localStorage.setItem('plms_token', token);
-      localStorage.setItem('plms_user_name', name);
-      if (theme) {
-        localStorage.setItem('plms_theme', theme);
-        // 注意：這裡存入 LocalStorage 後，因為 React App 已經渲染，
-        // ThemeContext 不會自動變更（除非重新整理）。
-        // 為了完美體驗，通常建議登入後做一次 window.location.reload() 或 redirect
-        // 不過因為您的邏輯是 navigate('/dashboard')，這會觸發 Dashboard 重新渲染，
-        // 但最外層的 Context 可能不會變。
-        
-        // 簡單解法：這裡強制重整一次頁面跳轉
-        window.location.href = '/dashboard'; 
-        return; // 中斷後續 navigate
+      if (isLogin) {
+        // 登入
+        const res = await axios.post(`${apiBase}/tokens`, {
+          staff_code: formData.staff_code,
+          password: formData.password
+        });
+        const { token, name, theme: userTheme } = res.data.data;
+        localStorage.setItem('pms_token', token);
+        localStorage.setItem('pms_user_name', name);
+        if (userTheme) localStorage.setItem('pms_theme', userTheme);
+        window.location.href = '/dashboard';
+      } else {
+        // 註冊
+        await axios.post(`${apiBase}/users`, formData);
+        setNotification({ open: true, message: '註冊成功！請登入', severity: 'success' });
+        setIsLogin(true);
       }
-
-      showNotification(`登入成功！歡迎回來，${name}`, 'success');
-      
-      // 1 秒後跳轉到資產清單頁
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
-
     } catch (error: any) {
-      console.error('登入錯誤:', error);
-      
-      let errorMsg = '連線失敗，請檢查網路或伺服器狀態';
-      if (error.response && error.response.data && error.response.data.message) {
-        errorMsg = error.response.data.message;
-      }
-
-      showNotification(errorMsg, 'error');
+      setNotification({ open: true, message: error.response?.data?.message || '操作失敗', severity: 'error' });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-        padding: 2
-      }}
-    >
+    <Box sx={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+    }}>
       <CssBaseline />
-      
       <Container maxWidth="xs">
-        <Card 
-          elevation={10} 
-          sx={{ borderRadius: 4, overflow: 'visible', mt: 4 }}
-        >
-          <CardContent sx={{ p: 4, textAlign: 'center' }}>
-            
-            <Box sx={{ marginTop: -8, marginBottom: 2, display: 'flex', justifyContent: 'center' }}>
-              <Avatar sx={{ width: 80, height: 80, bgcolor: 'secondary.main', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
-                <LockOutlinedIcon sx={{ fontSize: 40 }} />
-              </Avatar>
-            </Box>
+        <Fade in timeout={800}>
+          <Card elevation={24} sx={{ borderRadius: 5, bgcolor: 'rgba(255, 255, 255, 0.96)', backdropFilter: 'blur(10px)' }}>
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{ textAlign: 'center', mb: 3 }}>
+                <Box sx={{ display: 'inline-flex', p: 1.5, borderRadius: 3, bgcolor: 'white', boxShadow: 3, mb: 2 }}>
+                  <PMSLogo size={50} />
+                </Box>
+                <Typography variant="h4" fontWeight="900" color="primary">PMS</Typography>
+                <Typography variant="body2" color="text.secondary">資傳系 · 財產管理系統</Typography>
+              </Box>
 
-            <Typography component="h1" variant="h4" fontWeight="bold" gutterBottom sx={{ color: '#333' }}>
-              PLMS
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-              資產管理系統登入
-            </Typography>
+              <Tabs value={isLogin ? 0 : 1} onChange={(_, v) => setIsLogin(v === 0)} centered sx={{ mb: 2 }}>
+                <Tab label="帳號登入" />
+                <Tab label="快速註冊" />
+              </Tabs>
 
-            <form onSubmit={handleSubmit} noValidate>
-              <TextField
-                fullWidth
-                margin="normal"
-                label="教職員編號 (Staff Code)"
-                name="staff_code"
-                value={formData.staff_code}
-                onChange={handleChange}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PersonOutlineIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }
-                }}
-                sx={{ mb: 2 }}
-              />
-
-              <TextField
-                fullWidth
-                margin="normal"
-                label="密碼 (Password)"
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <KeyIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }
-                }}
-                sx={{ mb: 3 }}
-              />
-
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                disabled={isLoading}
-                sx={{
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  boxShadow: '0 4px 12px rgba(33, 150, 243, .3)',
-                  backgroundColor: '#1976d2',
-                  '&:hover': { backgroundColor: '#115293' }
-                }}
-              >
-                {isLoading ? '登入中...' : '登入系統'}
-              </Button>
-            </form>
-            
-            <Typography variant="caption" display="block" sx={{ mt: 4, color: '#aaa' }}>
-              © 2025 Property List Management System
-            </Typography>
-
-          </CardContent>
-        </Card>
+              <form onSubmit={handleSubmit}>
+                {!isLogin && (
+                  <TextField fullWidth margin="normal" label="姓名" name="name" onChange={handleChange}
+                    slotProps={{ input: { startAdornment: <InputAdornment position="start"><BadgeIcon color="action" /></InputAdornment> } }} />
+                )}
+                <TextField fullWidth margin="normal" label="帳號" name="staff_code" onChange={handleChange}
+                  slotProps={{ input: { startAdornment: <InputAdornment position="start"><PersonOutlineIcon color="action" /></InputAdornment> } }} />
+                <TextField fullWidth margin="normal" label="密碼" type={showPassword ? 'text' : 'password'} name="password" onChange={handleChange}
+                  slotProps={{ input: { 
+                    startAdornment: <InputAdornment position="start"><KeyIcon color="action" /></InputAdornment>,
+                    endAdornment: <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">{showPassword ? <VisibilityOff /> : <Visibility />}</IconButton>
+                    </InputAdornment>
+                  } }} />
+                <Button type="submit" fullWidth variant="contained" size="large" disabled={isLoading} sx={{ mt: 4, py: 1.8, borderRadius: 3, fontWeight: 'bold' }}>
+                  {isLoading ? '處理中...' : (isLogin ? '進入系統' : '立即註冊')}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </Fade>
       </Container>
-
-      <Snackbar 
-        open={notification.open} 
-        autoHideDuration={4000} 
-        onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }} 
-      >
-        <Alert 
-          onClose={handleCloseNotification} 
-          severity={notification.severity} 
-          variant="filled" 
-          sx={{ width: '100%', boxShadow: 3 }}
-        >
-          {notification.message}
-        </Alert>
+      <Snackbar open={notification.open} autoHideDuration={4000} onClose={() => setNotification({ ...notification, open: false })} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+        <Alert severity={notification.severity} variant="filled">{notification.message}</Alert>
       </Snackbar>
     </Box>
   );
